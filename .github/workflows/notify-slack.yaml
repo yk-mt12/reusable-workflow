@@ -1,0 +1,47 @@
+name: Notify Slack
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        required: true
+        type: string
+    secrets:
+      slack_bot_token:
+        required: true
+      slack_channel_ids:
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ secrets.slack_channel_ids }}
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ inputs.message }}",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ">*<${{ env.GITHUB_REPOSITORY_URL }}|${{ github.repository }}>*\n>*Job*\n><${{ env.GITHUB_ACTIONS_JOB_URL }}|${{ github.run_id }}>"
+                  }
+                }
+              ],
+              "text": "Repository: ${{ env.GITHUB_REPOSITORY_URL }}\nJob: ${{ env.GITHUB_ACTIONS_JOB_URL }}"
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_bot_token }}
+          GITHUB_REPOSITORY_URL: ${{ github.server_url}}/${{ github.repository }}
+          GITHUB_ACTIONS_JOB_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
